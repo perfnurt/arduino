@@ -10,13 +10,15 @@ Det är dock bra med viss förkunskap så som
   - hur man laddar ner program till Arduinon
   - vad funktionerna ```setup()``` och ```loop()``` gör.
   - lite om motstånd (resistorer) och deras färgkodning
+  - hur kopplingsplattan fungerar
 
 Det finns gott om information om det på nätet - eller fråga någon i din närhet!  
 
 För detta projekt behövs
 
-  - En Arduino
-  - En LED
+  - En Arduino 
+  - En kopplingsplatta
+  - En LED lampa
   - Motstånd
     - 1 st 220Ω
     - 1 st 1MΩ
@@ -27,8 +29,8 @@ För detta projekt behövs
 Lista över alla steg:
 
   1. [Tryck på en knapp - säg till Arduinon att tända lampan.](#section_1)
-  1. [Knacka - tänd/släck lampan.](#section_2)
-  1. [Knacka - tänd/släck lampan, mindre fladder.](#section_3)
+  1. [Knacka - lampan blinkar till.](#section_2)
+  1. [Knacka - lampan lyser en liten stund.](#section_3)
   1. [Knacka 2 gånger - tänd lampan lika länge](#section_4)
   1. [Knacka flera gånger - tänd lampan när man slutat](#section_5)
   1. [Spela upp knackningar med lampan.](#section_6)
@@ -50,9 +52,15 @@ Programmet i Arduinon känner av när pinne 2 får en signal och skickar då ut 
 
 Programmet:
 ```arduino
+
+// Konstanter
 const int pinne_lampa = 10;
 const int pinne_knapp = 2;
 
+// Variabler
+bool lampan_lyser = false;
+
+// Funktioner
 void setup()
 {
     pinMode(pinne_knapp, INPUT_PULLUP);
@@ -61,214 +69,207 @@ void setup()
 
 void loop()
 {
-    if (digitalRead(pinne_knapp) == LOW) // Knappen är nere
-        digitalWrite(pinne_lampa, HIGH); // Lampan lyser
+    bool lampan_ska_lysa = lampan_lyser;
+
+    if (digitalRead(pinne_knapp) == LOW) // Är knappen nere?
+    {
+        lampan_ska_lysa = true;
+    }
     else
-        digitalWrite(pinne_lampa, LOW);  // Lampan är släckt
+    {
+        lampan_ska_lysa = false;
+    }
+
+    if (lampan_lyser != lampan_ska_lysa)
+    {
+        if (lampan_ska_lysa)
+            digitalWrite(pinne_lampa, HIGH);  // Tänd lampan
+        else
+            digitalWrite(pinne_lampa, LOW);  // Släck lampan
+
+        lampan_lyser = lampan_ska_lysa;
+    }
 }
 ```
 
-## <a name="section_2"></a>2. Knacka - tänd/släck lampan.
+## <a name="section_2"></a>2. Knacka - lampan blinkar till.
 Istället för en knapp som i steg 1 så används en mikrofon.
 
 ![Kopplingsbild](knack_lampa_bb.png)
 *Mikrofonen är kopplad till A0 och GND, parallellt med ett 1MΩ motstånd.*<br>
 *Lampan är kopplad till pinne 10 och till GND via ett 220Ω motstånd.*
 
-Utifrån hur starkt ljudet är får man ett signalvärde på mellan 0 och 1023, där 0 alltså betyder att den inte känner av något alls och 1023 är det starkaste.
+Utifrån hur starkt ljudet är får man ett signalvärde på mellan 0 och 1024, där 0 alltså betyder att den inte känner av något alls och 1024 är det starkaste.
 
-För att inte varenda litet ljud ska störa kan man sätta ett gränsvärde och inte bry sig om ljud som är svagare än det. I programmet anger konstanten ```limit``` gränsvärdet.
+För att inte varenda litet ljud ska störa kan man sätta ett gränsvärde och inte bry sig om ljud som är svagare än det. I programmet anger konstanten ```gransvarde``` gränsvärdet.
 
 ```arduino
 
-const int limit = // Välj ett lagom gränsvärde - prova dig fram, 0, 1, 2, ...
-
+// Konstanter
+const int gransvarde = // Välj ett lagom gränsvärde - prova dig fram. 
 const int pinne_lampa = 10;
-const int pinne_mikrofon=0;
-bool lampan_ar_tand=false;
+const int pinne_mikrofon = 0; // Pinne A0 på kortet.
 
+// Variabler
+bool lampan_lyser = false;
+
+// Funktioner
 void setup()
 {
-    pinMode(2, INPUT);
-    pinMode(10, OUTPUT);    
+    pinMode(pinne_mikrofon, INPUT_PULLUP);
+    pinMode(pinne_lampa, OUTPUT);    
 }
 
 void loop()
 {
-    int ljud_signal = analogRead(pinne_mikrofon);
+    bool lampan_ska_lysa = lampan_lyser;
 
-    if(ljud_signal > limit)
+    if (analogRead(pinne_mikrofon) > gransvarde) // Låter det tillräckligt?
     {
-        // Byt från släckt till tänd eller tvärtom
-        lampan_ar_tand = !lampan_ar_tand;
+        lampan_ska_lysa = true;
+    }
+    else
+    {
+        lampan_ska_lysa = false;
+    }
 
-        if(lampan_ar_tand)
-            digitalWrite(pinne_lampa, HIGH);
+    if (lampan_lyser != lampan_ska_lysa)
+    {
+        if (lampan_ska_lysa)
+        {
+            digitalWrite(pinne_lampa, HIGH);  // Tänd lampan
+        }
         else
-            digitalWrite(pinne_lampa, LOW);
-    }
+        {
+            digitalWrite(pinne_lampa, LOW);  // Släck lampan
+        }
 
+        lampan_lyser = lampan_ska_lysa;
+    }
 }
 ```
 
-## <a name="section_3"></a>3. Knacka - tänd/släck lampan, mindre fladder.
+## <a name="section_3"></a>3. Knacka - lampan lyser en liten stund.
 
-När man kör programmet ovan kommer man märka att lampan kan fladdrar lite när man knackar på mikrofonen. 
+När man kör programmet ovan lyser bara lampan så länge Arduinon tar mot ljudet, för en knackning är det förstås väldigt kort tid, 
+man hinner knappt se att lampan lyser överhuvudtaget.
 
-Det gör den eftersom det blir inte bara en enda ljudsignal som tas från mikrofonen, en knackning ger upphov till ett helt gäng av signaler.
+Kan man kanske få lampan att lysa lite längre?
 
-Så hur man man få alla signaler att tillhöra ett och samma knack?
+Till sin hjälp kan man använda funktionen ```millis()```. 
 
-Man kan t.ex. kolla ifall signalen är första signalen efter att det varit tyst och bara då ändra lampan.
+Den ger hur många *millisekunder* som gått sedan Arduinon startats. Det går 1000 millisekunder på en sekund.
+
+Med hjäp av den kan man se till att lampan släcks ett visst antal millisekunder efter att den tänts.
 
 ```arduino
-
-const int limit = 80;
+// Konstanter
+const unsigned long lampans_lystid = ?; // Hur många millisekunder ska lampan lysa?
+const int gransvarde = 100;
 
 const int pinne_lampa = 10;
-const int pinne_mikrofon=0;
-bool lampan_ar_tand=false;
+const int pinne_mikrofon = 0; // Pinne A0 på kortet.
 
+// Variabler
+unsigned long dags_att_slacka_lampan = 0;
+
+// Funktioner
 void setup()
 {
-    pinMode(2, INPUT);
-    pinMode(10, OUTPUT);    
+    pinMode(pinne_lampa, OUTPUT);    
 }
-
-bool det_var_ljud_precis = false;
 
 void loop()
 {
-    int ljud_signal = analogRead(pinne_mikrofon);
-   
-    if(ljud_signal > limit)
+    const unsigned long tid_nu = millis();
+
+    if (analogRead(pinne_mikrofon) > gransvarde) // Låter det tillräckligt?
     {
-      // Vi har tagit emot en tillräckligt hög ljudsignal
-
-      if(!det_var_ljud_precis)
-      {
-          // Det var första signalen i detta knack
-
-          // Byt från släckt till tänd eller tvärtom
-          lampan_ar_tand = !lampan_ar_tand;
-
-          // Nu är det inte tyst längre, knack pågår!
-          det_var_ljud_precis = true;
-      }
-
-    }
-    else
-    {
-      // Inget ljud, då är det alltså tyst (igen)
-      if (det_var_ljud_precis)
-      {
-        // Knacket slutade precis.
-        det_var_ljud_precis = false;
-      }
+        digitalWrite(pinne_lampa, HIGH);  // Tänd lampan
+        dags_att_slacka_lampan = tid_nu + lampans_lystid;
     }
 
-    if(lampan_ar_tand)
-      digitalWrite(pinne_lampa, HIGH);
-    else
-      digitalWrite(pinne_lampa, LOW);
+    if (dags_att_slacka_lampan>0 && tid_nu >= dags_att_slacka_lampan)
+    {
+        digitalWrite(pinne_lampa, LOW);  // Släck lampan
+        dags_att_slacka_lampan = 0;
+    }
 }
 ```
-Nu fladdrar inte lampan när man knackar på mikrofonen.
 
 ## <a name="section_4"></a>4. Knacka 2 gånger - tänd lampan lika länge
 
-Nästa steg i det hela är att lista ut hur man kan mäta tid, detta är användbart sedan när vi ska känna av om man knackat rätt.
+Hur lång tid är det mellan två knackningar?
 
-I detta program mäter man tiden mellan två knackningar och efter den andra knackningen låter man sedan lampan vara tänd lika
-länge som tiden mellan knackningarna.
+Nästa steg är att lista ut just det, det kommer vara användbart sedan när vi ska känna av om man knackat rätt.
 
-För att mäta tid på detta sätt finns funktionen ```millis()```. Den ger antalet *millisekunder* som gått sedan Arduinon startats (det går 1000 millisekunder på en sekund).
+Även här kan man ha nytta av funktionen ```millis()```.
 
-Genom att anropa ```millis()``` två gånger och ta det andra värdet minus det första får man alltså svaret på hur många millisekunder som gått mellan de två anropen.
+Genom att anropa ```millis()``` två gånger och ta det *andra* värdet *minus* det *första* får man alltså svaret på hur många millisekunder som gått mellan de två anropen.
 
-Det kan man använda när man ska räkna ut tiden mellan knackningar.
+Det kan man använda när man ska räkna ut tiden mellan knackningarna.
 
 ```arduino
-
-const int limit = 80;
-
+// Konstanter
+const int gransvarde = 5;
 const int pinne_lampa = 10;
-const int pinne_mikrofon=0;
-bool lampan_ar_tand=false;
+const int pinne_mikrofon = 0; // Pinne A0 på kortet.
 
+
+// Variabler
+unsigned long dags_att_slacka_lampan = 0;
+unsigned long knacktid1 = 0; // Håller reda på den första knackingens tid
+unsigned long knacklangd = 100; 
+
+unsigned long next_debug_print = 0;
+// Funktioner
 void setup()
 {
-    pinMode(2, INPUT);
-    pinMode(10, OUTPUT);    
+    pinMode(pinne_lampa, OUTPUT);    
 }
-
-bool det_var_ljud_precis = false;
-
-// ge_mig_knack_tid() 
-// Om ett knack precis avslutats returneras tiden, i annat fall returneras 0.
-long int ge_mig_knack_tid()
-{
-    int ljud_signal = analogRead(pinne_mikrofon);
-  
-    if(ljud_signal > limit)
-    {
-      det_var_ljud_precis = true;
-    }
-    else
-    {
-      if(det_var_ljud_precis)
-      {
-        // Knacket slutade precis.
-        det_var_ljud_precis = false;
-
-        // Returnera tidpunkten
-        return millis();
-      }
-    }
-
-    // Inget knack har precis slutat - då returneras 0
-    return 0;
-}
-
-long int knack1 = 0;
-long int dags_att_slacka_lampan = 0;
 
 void loop()
 {
-    long int tid = ge_mig_knack_tid();
+    const unsigned long tid_nu = millis();
 
-    if (tid > 0)
+    if(next_debug_print == 0) next_debug_print = tid_nu + 500;
+      
+    if (dags_att_slacka_lampan == 0)
     {
-      // Vi fick en knacktid. Är det första eller andra knackningen?
-      if (knack1 == 0)
+      if (analogRead(pinne_mikrofon) > gransvarde) // Låter det tillräckligt?
       {
-         // Vi har ingen första knacktid - då var det första knackningen
-         knack1 = tid;
-      }
-      else
-      {
-        // Vi hade redan första knacktid, då är det andra knackningen
-        long int knack2 = tid;
-
-        long int tid_mellan_knack = knack2 - knack1;
-
-        // Dags att tända lampan
-        digitalWrite(pinne_lampa, HIGH);
-
-
-        // När ska den släckas?
-        dags_att_slacka_lampan = knack2 + tid_mellan_knack;
-
+          if (knacktid1 == 0)
+          {
+            // Vi har ingen tid för första knackingen sedan tidigare
+            // alltså är detta första knackningen.
+  
+            knacktid1 = tid_nu;
+            dags_att_slacka_lampan = tid_nu + knacklangd;
+            digitalWrite(pinne_lampa, HIGH);  // Tänd lampan liten stund för att visa att Arduninon hört knacket
+          }
+          else 
+          if (tid_nu > knacktid1 + knacklangd) // Testa att ta bort denna rad. Vad händer? Varför?
+          {
+            // Vi hade redan sparat tiden för första knackningen, då
+            // är detta andra knackningen.
+            const unsigned long knacktid2 = tid_nu;
+  
+            const unsigned long tid_mellan_knackningrna = knacktid2 - knacktid1;
+  
+            dags_att_slacka_lampan = tid_nu + tid_mellan_knackningrna;
+            digitalWrite(pinne_lampa, HIGH);  // Tänd lampan
+            knacktid1 = 0;
+          }
       }
     }
 
-    if (dags_att_slacka_lampan > millis())
+    if (tid_nu > next_debug_print){
+      next_debug_print = 0;
+    }
+    if (dags_att_slacka_lampan>0 && tid_nu >= dags_att_slacka_lampan)
     {
-      digitalWrite(pinne_lampa, LOW);
-      dags_att_slacka_lampan = 0;
-
-      // Genom att sätta knack1 till 0 gör vi oss beredda på att lyssna efter 2 nya knackningar
-      knack1 = 0;
+        digitalWrite(pinne_lampa, LOW);  // Släck lampan
+        dags_att_slacka_lampan = 0;
     }
 }
 ```
@@ -281,87 +282,49 @@ Det är när det varit tyst tillräckligt länge.
 
 Vad är tillräckligt länge? 
 
-Bra fråga, vad tycker du?
+Vad tycker du?
 
 ```arduino
-
-// Hur många millisekunder är lagom att vänta innan man bestämmer sig för att tända lampan
-// Prova olika värden som kan passa. Tänk på att det går 1000 på en sekund.
-const long int tid_avslutad_knackning = ?; 
-
-const long int tid_lampan_ska_lysa = ?; // Hur länge ska lampan lysa? 
-
-const int limit = 80;
-
+// Konstanter
+const int gransvarde = 5;
 const int pinne_lampa = 10;
-const int pinne_mikrofon=0;
-bool lampan_ar_tand=false;
+const int pinne_mikrofon = 0; // Pinne A0 på kortet.
+const unsigned long vante_tid = ?; // Hur länge ska man vänta?
+const unsigned long lys_tid = ?; // Så länge lyser lampan
 
+// Variabler
+unsigned long dags_att_slacka_lampan = 0;
+unsigned long senaste_knacktid = 0; 
+
+// Funktioner
 void setup()
 {
-    pinMode(2, INPUT);
-    pinMode(10, OUTPUT);    
+    pinMode(pinne_lampa, OUTPUT);    
 }
-
-bool det_var_ljud_precis = false;
-
-// ge_mig_knack_tid() 
-// Om ett knack precis avslutats returneras tiden, i annat fall returneras 0.
-long int ge_mig_knack_tid()
-{
-    int ljud_signal = analogRead(pinne_mikrofon);
-  
-    if(ljud_signal > limit)
-    {
-      det_var_ljud_precis = true;
-    }
-    else
-    {
-      if(det_var_ljud_precis)
-      {
-        // Knacket slutade precis.
-        det_var_ljud_precis = false;
-
-        // Returnera tidpunkten
-        return millis();
-      }
-    }
-
-    // Inget knack har precis slutat - då returneras 0
-    return 0;
-}
-
-long int tid_senaste_knack = 0;
-long int dags_att_slacka_lampan = 0;
 
 void loop()
 {
-    long int tid = ge_mig_knack_tid();
+    const unsigned long tid_nu = millis();
 
-    if (tid > 0)
+    if (analogRead(pinne_mikrofon) > gransvarde) // Låter det tillräckligt?
     {
-      // Vi fick en knacktid. 
-      tid_senaste_knack = tid;
-
+        senaste_knacktid = tid_nu;
     }
 
-    long int tid_nu = millis();
-
-    if (tid_senaste_knack > 0 && tid_nu > tid_senaste_knack + tid_avslutad_knackning){
-      // Nu har vi väntat tillräckligt länge
-      // Dags att tända lampan
-      digitalWrite(pinne_lampa, HIGH);
-
-      tid_senaste_knack = 0;
-
-      dags_att_slacka_lampan = tid_nu + tid_lampan_ska_lysa;
+    if (senaste_knacktid > 0)
+    {
+      if (tid_nu > senaste_knacktid + vante_tid)
+      {
+        senaste_knacktid = 0;
+        dags_att_slacka_lampan = tid_nu + lys_tid;
+        digitalWrite(pinne_lampa, HIGH);  // Tänd lampan
+      }
     }
 
-    if (dags_att_slacka_lampan > tid_nu)
+    if (dags_att_slacka_lampan>0 && tid_nu >= dags_att_slacka_lampan)
     {
-      digitalWrite(pinne_lampa, LOW);
-      dags_att_slacka_lampan = 0;
-
+        digitalWrite(pinne_lampa, LOW);  // Släck lampan
+        dags_att_slacka_lampan = 0;       
     }
 }
 ```
