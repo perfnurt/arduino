@@ -18,9 +18,10 @@ För detta projekt behövs
 
   - En Arduino 
   - En kopplingsplatta
-  - En LED lampa
+  - En Grön LED lampa
+  - En Röd LED lampa
   - Motstånd
-    - 1 st 220Ω
+    - 2 st 220Ω
     - 1 st 1MΩ
   - Div kopplingssladdar
   - Piezomikrofon
@@ -28,17 +29,17 @@ För detta projekt behövs
 
 Lista över alla steg:
 
-  1. [Tryck på en knapp - säg till Arduinon att tända lampan.](#section_1)
-  1. [Knacka - lampan blinkar till.](#section_2)
-  1. [Knacka - lampan lyser en liten stund.](#section_3)
-  1. [Knacka 2 gånger - tänd lampan lika länge](#section_4)
-  1. [Knacka flera gånger - tänd lampan när man slutat](#section_5)
-  1. [Spela upp knackningar med lampan.](#section_6)
-  1. [Spela upp och spara knackningar - men bara om en knapp trycks ner](#section_7)
-  1. [Jämför knackningar med sparad inspelning. Tänd lampan om de stämmer](#section_8)
-  1. [Koppla på motor...](#section_9)
+  1. [Tryck på en knapp - säg till Arduinon att tända lampan.](#step_1)
+  1. [Knacka - lampan blinkar till.](#step_2)
+  1. [Knacka - lampan lyser en liten stund.](#step_3)
+  1. [Knacka 2 gånger - tänd lampan lika länge](#step_4)
+  1. [Knacka flera gånger - tänd lampan när man slutat](#step_5)
+  1. [Spela upp knackningar med lampan.](#step_6)
+  1. [Spela upp och spara knackningar - men bara om en knapp trycks ner](#step_7)
+  1. [Jämför knackningar med sparad inspelning.](#step_8)
+  1. [Koppla på motor...](#step_9)
 
-## <a name="section_1"></a>1. Tryck på en knapp - säg till Arduinon att tända lampan.
+## <a name="step_1"></a>1. Tryck på en knapp - säg till Arduinon att tända lampan.
 Introduktion till Arduino.
 
 När knappen trycks ner skickas en signal till Arduinon på pinne 2.
@@ -92,7 +93,7 @@ void loop()
 }
 ```
 
-## <a name="section_2"></a>2. Knacka - lampan blinkar till.
+## <a name="step_2"></a>2. Knacka - lampan blinkar till.
 Istället för en knapp som i steg 1 så används en mikrofon.
 
 ![Kopplingsbild](knack_lampa_bb.png)
@@ -149,7 +150,7 @@ void loop()
 }
 ```
 
-## <a name="section_3"></a>3. Knacka - lampan lyser en liten stund.
+## <a name="step_3"></a>3. Knacka - lampan lyser en liten stund.
 
 När man kör programmet ovan lyser bara lampan så länge Arduinon tar mot ljudet, för en knackning är det förstås väldigt kort tid, 
 man hinner knappt se att lampan lyser överhuvudtaget.
@@ -197,7 +198,7 @@ void loop()
 }
 ```
 
-## <a name="section_4"></a>4. Knacka 2 gånger - tänd lampan lika länge
+## <a name="step_4"></a>4. Knacka 2 gånger - tänd lampan lika länge
 
 Hur lång tid är det mellan två knackningar?
 
@@ -274,7 +275,7 @@ void loop()
 }
 ```
 
-## <a name="section_5"></a>5. Knacka flera gånger - tänd lampan när man slutat
+## <a name="step_5"></a>5. Knacka flera gånger - tänd lampan när man slutat
 
 Hur vet man när det knackats färdigt? 
 
@@ -329,23 +330,19 @@ void loop()
 }
 ```
 
-## <a name="section_6"></a>6. Spela upp knackningar med lampan.
+## <a name="step_6"></a>6. Spela upp knackningar med lampan.
 
-  1. Efter varje knack (förutom det första) [spara undan hur lång tid det var till foregående knack.](#section_6_1)
-  1. [Efter sista knackningen](#section_6_2), låt lampan lysa utifrån de [sparade tiderna](#section_6_3).
+  1. Efter varje knack (förutom det första) [spara undan hur lång tid det var till föregående knack.](#step_6_1)
+  1. [Efter sista knackningen](#step_6_2), låt lampan lysa utifrån de [sparade tiderna](#step_6_3).
 
 
-### <a name="section_6_1"></a> 6.1. Spara undan hur lång tid det var till foregående knack.
+### <a name="step_6_1"></a> 6.1. Spara undan hur lång tid det var till föregående knack.
 
-Till detta kan man ha en hel lista av värden i en enda variable, en sk *array* eller *vektor*.
+Man kan ha ett helt gäng av värden i en enda variabel, en sk *array* eller *vektor*. Med hjälp av ett heltal kan man sedan peka ut vilket av värdena man vill ändra på eller hämta ut.
 
-Exempel:
-```arduino
-unsigned long tider[3];
-```
 
-Variabeln ```tider``` har plats för 3 stycken ```unsigned long``` värden. Den första har index 0.
-Exempel:
+
+**Exempel:**
 ```arduino
 unsigned long tider[3];
 
@@ -354,18 +351,21 @@ tider[1] = 456;
 tider[2] = 789;
 ```
 
-I ```tider``` ovan får det alltså plats 3 tidsvärden. Är det lagom? Hur många knackningar vill man kunna hantera som mest?
+I ```tider``` ovan får det alltså plats 3 tidsvärden som man kommer åt med index 0, 1 och 2. 
 
-### <a name="section_6_2"></a> 6.2. Efter sista knackningen
+Är det lagom många? Hur många knackningar vill man kunna hantera som mest?
 
-Hur vet man att det är den sista knackning? Se Steg 5 ovan.
+### <a name="step_6_2"></a> 6.2. Efter sista knackningen
 
-### <a name="section_6_3"></a> 6.3. Gå igenom sparade knacktider
+Hur vet man att det är den sista knackning? Se [Steg 5](#step_5) ovan.
+
+### <a name="step_6_3"></a> 6.3. Gå igenom sparade knacktider
 
 Gå igenom sparade knacktider och låt lampan lysa så länge som varje knackning varat, glöm inte släcka lampan en liten stund mellan varven.
 
-Till detta kan man använda ```for``` uttrycket. Det kan användas till att räkna upp en variablel, t.ex. från 0 till ```antalet_knackning_som_sparats```.
-Exempel:
+Till detta kan man använda ```for``` uttrycket. Det kan användas till att räkna upp en variabel, t.ex. från 0 till ```antalet_knackning_som_sparats```.
+
+**Exempel:**
 ```arduino
 unsigned long tider[15];
 int antalet_knackning_som_sparats = 5;
@@ -380,12 +380,23 @@ for(int i=0; i < antalet_knackning_som_sparats; i++)
 
 ```
 
-## <a name="section_7"></a>7. Spela upp och spara knackningar - men bara om en knapp trycks ner
+## <a name="step_7"></a>7. Spela upp och spara knackningar - men bara om en knapp trycks ner
 
-## <a name="section_8"></a>8. Jämför knackningar med sparad inspelning. Tänd lampan om de stämmer
+Se [steg 1](#step_1) för hur man känner av om en knapp är nertryckt.
 
-Hur lika är tiderna?
+## <a name="step_8"></a>8. Jämför knackningar med sparad inspelning.
+Låtsaskod:
 
-Hur fel får det vara men ändå räknas som rätt?
+```
+Om knappen är nere
+  Spela in och spara knackningar
 
-## <a name="section_9"></a>9. Koppla på motor...
+Om knappen är uppe
+  Spela in knackningar.
+  Jämför knackningarnas tider med sparade tider.
+
+  Tänd grön lampa om de stämmer
+  Tänd röd lampa om de var fel.
+```
+## <a name="step_9"></a>9. Koppla på motor...
+  När grön lampa tänds enligt [steg 8 ](#step_8) starta motorn.
