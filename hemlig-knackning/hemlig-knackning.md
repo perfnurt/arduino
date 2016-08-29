@@ -330,9 +330,55 @@ void loop()
 ```
 
 ## <a name="section_6"></a>6. Spela upp knackningar med lampan.
-Efter varje knack spara undan hur lång tid det för till knacket före.
 
-När den sista knackningen knackats - gå igenom sparade knacktider och låt lampan lysa så länge som varje knackning varat, glöm inte släcka lampan en liten stund mellan varven.
+  1. Efter varje knack (förutom det första) [spara undan hur lång tid det var till foregående knack.](#section_6_1)
+  1. [Efter sista knackningen](#section_6_2), låt lampan lysa utifrån de [sparade tiderna](#section_6_3).
+
+
+### <a name="section_6_1"></a> 6.1. Spara undan hur lång tid det var till foregående knack.
+
+Till detta kan man ha en hel lista av värden i en enda variable, en sk *array* eller *vektor*.
+
+Exempel:
+```arduino
+unsigned long tider[3];
+```
+
+Variabeln ```tider``` har plats för 3 stycken ```unsigned long``` värden. Den första har index 0.
+Exempel:
+```arduino
+unsigned long tider[3];
+
+tider[0] = 123;
+tider[1] = 456;
+tider[2] = 789;
+```
+
+I ```tider``` ovan får det alltså plats 3 tidsvärden. Är det lagom? Hur många knackningar vill man kunna hantera som mest?
+
+### <a name="section_6_2"></a> 6.2. Efter sista knackningen
+
+Hur vet man att det är den sista knackning? Se Steg 5 ovan.
+
+### <a name="section_6_3"></a> 6.3. Gå igenom sparade knacktider
+
+Gå igenom sparade knacktider och låt lampan lysa så länge som varje knackning varat, glöm inte släcka lampan en liten stund mellan varven.
+
+Till detta kan man använda ```for``` uttrycket. Det kan användas till att räkna upp en variablel, t.ex. från 0 till ```antalet_knackning_som_sparats```.
+Exempel:
+```arduino
+unsigned long tider[15];
+int antalet_knackning_som_sparats = 5;
+
+// ...
+
+for(int i=0; i < antalet_knackning_som_sparats; i++)
+{
+  unsigned knacktid = tider[i];
+  // ...
+}
+
+```
 
 ## <a name="section_7"></a>7. Spela upp och spara knackningar - men bara om en knapp trycks ner
 
